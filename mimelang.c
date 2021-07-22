@@ -23,6 +23,8 @@
 #include <sys/types.h>
 #include <wchar.h>
 
+#include "mimelang.h"
+
 #undef MB_CUR_MAX
 #define MB_CUR_MAX MB_LEN_MAX
 enum bits {
@@ -121,8 +123,19 @@ test_enc(const char *s, size_t len)
 			fprintf(stderr, "Incomplete multi byte character\n");
 			break;
 		default:
-			if (options & 0002)
-				printf("U+%04x %lc\n", wc, wc);
+			if (options & 0002) {
+				printf("U+%04x %lc", wc, wc);
+				if (options & 0004) {
+					int p;
+					for (p = 0; p < codepoints; p++) {
+						if (blocks[p].start <= wc && wc <= blocks[p].end) {
+							printf("\t%s", blocks[p].description);
+							break;
+						}
+					}
+				}
+				putchar('\n');
+			}
 			break;
 		}
 		return follow;
@@ -264,8 +277,11 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_CTYPE, "en_US.UTF-8");	// Required to use any MB function of libc
 
-	while ((opt = getopt(argc, argv, "Vvh")) != -1) {
+	while ((opt = getopt(argc, argv, "uVvh")) != -1) {
 		switch (opt) {
+		case 'u':
+			options |= 0004;
+			break;
 		case 'v':
 			options |= 0001;
 			break;
@@ -274,7 +290,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 		default:
-			fprintf(stderr, "Usage: e.g. echo '=?utf-8?Q?<Ouoted Printable>?=' | %s [-v][-V]\n", argv[0]);
+			fprintf(stderr, "Usage: e.g. echo '=?utf-8?Q?<Ouoted Printable>?=' | %s [-v][-V[u]]\n", argv[0]);
 			return 0;
 		}
 	}
