@@ -320,14 +320,17 @@ int main(int argc, char *argv[])
 	}
 
 	if (options & 0001) {
-		if (encflags & MIME_LATIN)
+		if (!encflags)
+			printf("ASCII string\n");
+		else if (encflags & MIME_LATIN)
 			printf("Latin string\n");
-		if (encflags & MIME_UTF8)
+		else if (encflags & MIME_UTF8) {
 			printf("UTF-8 string");
-		if (encflags & MIME_NONEU)
-			printf(" none europe\n");
-		else
-			putchar('\n');
+			if (encflags & MIME_NONEU)
+				printf(" none europe\n");
+			else
+				putchar('\n');
+		}
 	}
 
 	if (ptr)
