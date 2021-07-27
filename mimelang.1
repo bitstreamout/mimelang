@@ -1,0 +1,80 @@
+.\"
+.\" Copyright 2021 Werner Fink, 2021 SUSE Software Solutions Germany GmbH.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.TH MIMELANG 1 "Jul 21, 2021" "Version 0.1" "General Commands Manual"
+.UC 1
+.SH NAME
+Mimelang \- handle UTF-8 encoded subjects of e.g. e-mails from standard input
+.SH SYNOPSIS
+.\"
+.B mimelang
+.RI [ -v ]
+.RI [ -V [ u ] ]
+.SH DESCRIPTION
+The small tool
+.B mimelang
+can be used to decode e-mail
+.B UTF-8
+subjects which are mimencoded in
+.B base64
+or as
+.BR quoted-printable .
+.SH OPTIONS
+.TP
+.B \-v
+be verbose and report the type of UTF-8 multi-byte characters.
+.TP
+.BR \-V [ u ]
+be very verbose and report the unicode point of each UTF-8 multi-byte character as
+well as the character its self.  If the option
+.B -V
+is followed by the argument
+.B u
+then also the unicode block description is shown.
+.SH EXAMPLE
+On the command line:
+.PP
+.EX
+    echo '=?UTF-8?Q?=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF?=' | mimelang -vVu
+    U+3053 こ       Hiragana
+    U+3093 ん       Hiragana
+    U+306b に       Hiragana
+    U+3061 ち       Hiragana
+    U+306f は       Hiragana
+    UTF-8 string none europe
+.EE
+.PP
+and within a
+.B ~/.procmailrc
+file:
+.EE
+.PP
+    :0
+    * ^From:.*\.(jp|cn)
+    * ^Subject: +=\?utf-8\?[BQ]\?.*
+
+    {
+
+        SUBJECT="`formail -czx Subject:|mimelang -v`"
+
+        :0
+        * $ SUBJECT ?? ^^UTF-8 string none europe
+        cannotreadthat
+
+    }
+.EX
+.SH SEE ALSO
+.BR utf-8 (7),
+.BR unicode (7),
+.BR base64 (7),
+.BR mimencode (1).
+.SH COPYRIGHT
+2021 Werner Fink,
+2021 SUSE Software Solutions Germany GmbH.
+.SH AUTHOR
+Werner Fink <werner@suse.de>

@@ -271,20 +271,19 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_CTYPE, "en_US.UTF-8");	// Required to use any MB function of libc
 
-	while ((opt = getopt(argc, argv, "uVvh")) != -1) {
+	while ((opt = getopt(argc, argv, "V::vh")) != -1) {
 		switch (opt) {
-		case 'u':
-			options |= 0004;
-			break;
 		case 'v':
 			options |= 0001;
 			break;
 		case 'V':
 			options |= 0002;
+			if (optarg && *optarg == 'u')
+				options |= 0004;
 			break;
 		case 'h':
 		default:
-			fprintf(stderr, "Usage: e.g. echo '=?utf-8?Q?<Ouoted Printable>?=' | %s [-v][-V[u]]\n", argv[0]);
+			fprintf(stderr, "Usage: e.g. echo '=?utf-8?Q?<Ouoted Printable>?=' | %s [-v] [-V[u]]\n", argv[0]);
 			return 0;
 		}
 	}
@@ -296,16 +295,16 @@ int main(int argc, char *argv[])
 		 * Let us seek for encoding start =?utf-8?Q? for quoted printables or
 		 * =?utf-8?B? for base64 strings. The encoding stop is marked with ?=
 		 */
-		while ((start = strcasestr(start, "=?utf-8?"))) {
+		while ((start = strcasestr(start, "=?utf-8?")) && *(start+9) == '?') {
 			char *end;
 			start += 8;
 			if ((end = strcasestr(start+2, "?=")))
 				*end = '\0';
-			if (strncasecmp(start, "Q?", 2) == 0) {
+			if (*start == 'Q' || *start == 'q') {
 				start += 2;
 				decode_quoted_printable(start);
 			}
-			if (strncasecmp(start, "B?", 2) == 0) {
+			if (*start == 'B' || *start == 'b') {
 				start += 2;
 				decode_base64(start);
 			}
