@@ -17,7 +17,9 @@ TODO = mimelang
 
 all: $(TODO)
 
-mimelang: mimelang.c blocks.o
+blocks.o: mimelang.h
+
+mimelang: mimelang.c blocks.o mimelang.h
 	$(CC) $(CFLAGS) -o $@ $< blocks.o
 
 clean:

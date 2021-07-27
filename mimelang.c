@@ -27,11 +27,6 @@
 
 #undef MB_CUR_MAX
 #define MB_CUR_MAX MB_LEN_MAX
-enum bits {
-	MIME_UTF8	= 0001,	  /* UTF-8 high bit multi byte characters */
-	MIME_LATIN	= 0002,
-	MIME_NONEU	= 0004
-};
 
 #define F 0    /* character never appears in mail text */
 #define T 1    /* character appears in plain ASCII text */
@@ -111,8 +106,6 @@ test_enc(const char *s, size_t len)
 				goto latin;
 		}
 		encflags = MIME_UTF8;
-		if (follow > 1)
-			encflags |= MIME_NONEU;
 		(void) mblen ((char *) NULL, 0);
 		wret = mbtowc(&wc, s, follow+1);
 		switch (wret) {
@@ -129,6 +122,7 @@ test_enc(const char *s, size_t len)
 					int p;
 					for (p = 0; p < codepoints; p++) {
 						if (blocks[p].start <= wc && wc <= blocks[p].end) {
+							encflags |= blocks[p].flags;
 							printf("\t%s", blocks[p].description);
 							break;
 						}

@@ -9,9 +9,17 @@
  * (at your option) any later version.
  */
 
+enum bits {
+	MIME_UTF8	= 0001,   /* UTF-8 high bit multi byte characters */
+	MIME_LATIN	= 0002,
+	MIME_SYMBOL	= 0004,
+	MIME_NONEU	= 0010
+};
+
 typedef struct unicode_block {
 	const wchar_t start;
 	const wchar_t end;
+	const unsigned short flags;
 	const char* description;
 } unicode_block_t;
 
