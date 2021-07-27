@@ -80,7 +80,7 @@ test_enc(const char *s, size_t len)
 {
 	int c = *s;
 	if (c & 0100) {
-		int n, follow;
+		int n, follow, p;
 		wchar_t wc = 0;
 		size_t wret;
 
@@ -116,20 +116,18 @@ test_enc(const char *s, size_t len)
 			fprintf(stderr, "Incomplete multi byte character\n");
 			break;
 		default:
-			if (options & 0002) {
+			if (options & 0002)
 				printf("U+%04x %lc", wc, wc);
-				if (options & 0004) {
-					int p;
-					for (p = 0; p < codepoints; p++) {
-						if (blocks[p].start <= wc && wc <= blocks[p].end) {
-							encflags |= blocks[p].flags;
-							printf("\t%s", blocks[p].description);
-							break;
-						}
-					}
+			for (p = 0; p < codepoints; p++) {
+				if (blocks[p].start <= wc && wc <= blocks[p].end) {
+					encflags |= blocks[p].flags;
+					if (options & 0004)
+						printf("\t%s", blocks[p].description);
+					break;
 				}
-				putchar('\n');
 			}
+			if (options & 0002)
+				putchar('\n');
 			break;
 		}
 		return follow;
