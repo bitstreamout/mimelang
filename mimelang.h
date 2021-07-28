@@ -25,3 +25,6 @@ typedef struct unicode_block {
 
 extern const unicode_block_t blocks[];
 extern const size_t codepoints;
+
+extern unsigned char* decode64(char **src, size_t *len);
+extern unsigned char* decodeqp(char **src);

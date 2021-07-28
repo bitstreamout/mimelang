@@ -56,23 +56,6 @@ static char text_chars[256] = {
 };
 
 
-static const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-__inline__ static const int
-isbase64(char c)
-{
-	return c && strchr(base64, c) != NULL;
-}
-
-__inline__ static const char
-value(char c)
-{
-	const char *ptr = strchr(base64, c);
-	if (ptr)
-		return ptr - base64;
-	return 0;
-}
-
 static int options;
 static int encflags;
 static int
@@ -134,9 +117,29 @@ test_enc(const char *s, size_t len)
 	}
 latin:
 	c = *s;
-	if (text_chars[c & 0377] == I)
+	if (text_chars[c & 0377] == I) {
 		encflags = MIME_LATIN;
-	return 0;
+		if (options & 0010)
+			printf("L+%04x %c\n", (unsigned char)c, (char)c);
+	} else {
+		if (options & 0010)
+			printf("A+%04x %c\n", (unsigned char)c, c);
+	}
+	return 1;
+}
+
+static size_t
+strchrcnt(const char* src, const int c)
+{
+	size_t num = 0;
+	char *ptr = (char*)src;
+
+	while ((ptr = strchr(ptr, c)) != NULL) {
+		num++;
+		ptr++;
+	}
+
+	return num;
 }
 
 static int
@@ -148,6 +151,9 @@ has_highbit(const char *s, size_t len)
 				int off = test_enc(s, len);
 				s += off;
 				len -= off;
+			} else {
+				if (options & 0010)
+					printf("A+%04x %c\n", *s, *s);
 			}
 			s++;
 			len--;
@@ -156,109 +162,68 @@ has_highbit(const char *s, size_t len)
 	return 0;
 }
 
-static int
-hexval(int c)
-{
-	if ('0' <= c && c <= '9')
-		return c - '0';
-	if ('A' > c || c > 'F')
-		return -1;
-	return 10 + c - 'A';
-}
-
-static int
-decode_char(const char *s)
-{
-	if (s == NULL || *s != '=')
-		return -1;
-	if (s+1 == NULL || *(s+1) == '\0')
-		return -1;
-	if (s+2 == NULL || *(s+2) == '\0')
-		return -1;
-	return 0x10 * hexval(*(s+1)) + hexval(*(s+2));
-}
-
 static void
 decode_quoted_printable(const char *body)
 {
-	char buffer[strlen(body)+4];
-	size_t len = sizeof(buffer);
-	int pos = 0;
+	size_t len, nsign;
+	char *buffer;
+	unsigned char *out;
+	char *ptr;
+	ssize_t pos;
 
 	if (!body)
 		return;
 
-	memset(buffer, 0, sizeof(buffer));
-	while (*body && pos < len) {
-		if (*body != '=')
-			buffer[pos++] = *body++;
-		else if (*(body+1) == '\r' && *(body+2) == '\n')
-			body += 3;
-		else if (*(body+1) == '\n')
-			body += 2;
-		else if (!strchr("0123456789ABCDEF", *(body+1)))
-			buffer[pos++] = *body++;
-		else if (!strchr("0123456789ABCDEF", *(body+2)))
-			buffer[pos++] = *body++;
-		else {
-		    buffer[pos++] = decode_char(body);
-		    body += 3;
-		}
+	nsign  = strchrcnt(body, '=');
+	len = strlen(body);
+
+	len = len - (3*nsign) + nsign + 4;
+
+	buffer = (char*)malloc(len);
+	if (!buffer) {
+		perror("decode_quoted_printable: ");
+		exit(1);
 	}
-	if (buffer[0] != '\0') {
-		len = strlen(buffer);
-		has_highbit(buffer, len);
-	}
+		
+
+	memset(buffer, 0, len);
+	ptr = (char*)body;
+	pos = 0;
+
+	while (pos < len && (out = decodeqp(&ptr)))
+		buffer[pos++] = *(char*)out;
+	buffer[pos] = '\0';
+
+	if (buffer[0] != '\0')
+		has_highbit(buffer, pos);
+
+	free(buffer);
 }
 
 static void
 decode_base64(const char *body)
 {
-	size_t len = strlen(body);
-	char buffer[strlen(body)+4];
+	size_t len = strlen(body), off;
+	char buffer[len+4];
+	unsigned char *out;
 	char *ptr;
+	ssize_t pos;
 
 	if (!body)
 		return;
 
-	ptr = &buffer[0];
-
 	memset(buffer, 0, sizeof(buffer));
-	do {
-		const char a = value(body[0]);
-		const char b = value(body[1]);
-		const char c = value(body[2]);
-		const char d = value(body[3]);
+	ptr = (char*)body;
+	pos = 0;
 
-		*ptr++ = (a << 2) | (b >> 4);
-		*ptr++ = (b << 4) | (c >> 2);
-		*ptr++ = (c << 6) | d;
-
-		if(!isbase64(body[1])) {
-			ptr -= 2;
-			goto out;
-		} 
-
-		if(!isbase64(body[2])) {
-			ptr -= 2;
-			goto out;
-		} 
-
-		if(!isbase64(body[3])) {
-			ptr--;
-			goto out;
-		}
-
-		body += 4;
-		while(*body && (*body == '\r' || *body == '\n'))
-			body++;
-
-	} while((len-= 4));
-out:
-	if (buffer[0] != '\0') {
-		len = strlen(buffer);
-		has_highbit(buffer, len);
+	while (pos < sizeof(buffer) && (out = decode64(&ptr, &off))) {
+		strncpy(&buffer[pos], (char*)out, off);
+		pos += off;
 	}
+	buffer[pos] = '\0';
+
+	if (buffer[0] != '\0')
+		has_highbit(buffer, pos);
 }
 
 int main(int argc, char *argv[])
@@ -276,8 +241,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'V':
 			options |= 0002;
-			if (optarg && *optarg == 'u')
+			if (optarg && strchr(optarg, 'u'))
 				options |= 0004;
+			if (optarg && strchr(optarg, 'a'))
+				options |= 0010;
 			break;
 		case 'h':
 		default:
@@ -298,14 +265,10 @@ int main(int argc, char *argv[])
 			start += 8;
 			if ((end = strcasestr(start+2, "?=")))
 				*end = '\0';
-			if (*start == 'Q' || *start == 'q') {
-				start += 2;
-				decode_quoted_printable(start);
-			}
-			if (*start == 'B' || *start == 'b') {
-				start += 2;
-				decode_base64(start);
-			}
+			if (*start == 'Q' || *start == 'q')
+				decode_quoted_printable(start+2);
+			if (*start == 'B' || *start == 'b')
+				decode_base64(start+2);
 			start = end+2;
 		}
 	}
@@ -313,8 +276,10 @@ int main(int argc, char *argv[])
 	if (options & 0001) {
 		if (!encflags)
 			printf("ASCII string\n");
-		else if (encflags & MIME_LATIN)
+		else if ((encflags & (MIME_LATIN|MIME_UTF8)) == MIME_LATIN)
 			printf("Latin string\n");
+		else if ((encflags & (MIME_LATIN|MIME_UTF8)) == (MIME_LATIN|MIME_UTF8))
+			printf("UTF-8 string\n");
 		else if (encflags & MIME_UTF8) {
 			printf("UTF-8 string");
 			if (encflags & MIME_NONEU)

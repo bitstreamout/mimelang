@@ -5,7 +5,7 @@
 #
 
 MAJOR    :=     0
-MINOR    :=     1
+MINOR    :=     2
 VERSION  :=     $(MAJOR).$(MINOR)
 
    CC := gcc -g3
@@ -18,9 +18,10 @@ TODO = mimelang
 all: $(TODO)
 
 blocks.o: mimelang.h
+decode.o: mimelang.h
 
-mimelang: mimelang.c blocks.o mimelang.h
-	$(CC) $(CFLAGS) -o $@ $< blocks.o
+mimelang: mimelang.c blocks.o decode.o mimelang.h
+	$(CC) $(CFLAGS) -o $@ $< blocks.o decode.o
 
 clean:
 	$(RM) *.o *.a *.so* *~ $(TODO)
