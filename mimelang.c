@@ -184,7 +184,6 @@ decode_quoted_printable(const char *body)
 		perror("decode_quoted_printable: ");
 		exit(1);
 	}
-		
 
 	memset(buffer, 0, len);
 	ptr = (char*)body;
@@ -203,8 +202,8 @@ decode_quoted_printable(const char *body)
 static void
 decode_base64(const char *body)
 {
-	size_t len = strlen(body), off;
-	char buffer[len+4];
+	size_t len, off;
+	char *buffer;
 	unsigned char *out;
 	char *ptr;
 	ssize_t pos;
@@ -212,11 +211,19 @@ decode_base64(const char *body)
 	if (!body)
 		return;
 
-	memset(buffer, 0, sizeof(buffer));
+	len = strlen(body)+4;
+
+	buffer = (char*)malloc(len);
+	if (!buffer) {
+		perror("decode_base64: ");
+		exit(1);
+	}
+
+	memset(buffer, 0, len);
 	ptr = (char*)body;
 	pos = 0;
 
-	while (pos < sizeof(buffer) && (out = decode64(&ptr, &off))) {
+	while (pos < len && (out = decode64(&ptr, &off))) {
 		strncpy(&buffer[pos], (char*)out, off);
 		pos += off;
 	}
@@ -224,6 +231,8 @@ decode_base64(const char *body)
 
 	if (buffer[0] != '\0')
 		has_highbit(buffer, pos);
+
+	free(buffer);
 }
 
 int main(int argc, char *argv[])
