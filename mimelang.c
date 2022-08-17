@@ -99,7 +99,9 @@ test_enc(const char *s, size_t len)
 			fprintf(stderr, "Incomplete multi byte character\n");
 			break;
 		default:
-			if (options & 0002)
+			if (options & 0020)
+				printf("%lc", wc);
+			else if (options & 0002)
 				printf("U+%04x %lc", wc, wc);
 			for (p = 0; p < codepoints; p++) {
 				if (blocks[p].start <= wc && wc <= blocks[p].end) {
@@ -109,7 +111,7 @@ test_enc(const char *s, size_t len)
 					break;
 				}
 			}
-			if (options & 0002)
+			if (!(options & 0020) && (options & 0002))
 				putchar('\n');
 			break;
 		}
@@ -121,9 +123,13 @@ latin:
 		encflags = MIME_LATIN;
 		if (options & 0010)
 			printf("L+%04x %c\n", (unsigned char)c, (char)c);
+		else if (options & 0020)
+			printf("%c", (char)c);
 	} else {
 		if (options & 0010)
 			printf("A+%04x %c\n", (unsigned char)c, c);
+		else if (options & 0020)
+			printf("%c", (char)c);
 	}
 	return 1;
 }
@@ -154,6 +160,8 @@ has_highbit(const char *s, size_t len)
 			} else {
 				if (options & 0010)
 					printf("A+%04x %c\n", *s, *s);
+				if (options & 0020)
+					printf("%c", *s);
 			}
 			s++;
 			len--;
@@ -254,6 +262,8 @@ int main(int argc, char *argv[])
 				options |= 0004;
 			if (optarg && strchr(optarg, 'a'))
 				options |= 0010;
+			if (optarg && strchr(optarg, 's'))
+				options |= 0020;
 			break;
 		case 'h':
 		default:
@@ -297,7 +307,8 @@ int main(int argc, char *argv[])
 			else
 				putchar('\n');
 		}
-	}
+	} else if (options & 0020)
+		putchar('\n');
 
 	if (ptr)
 		free(ptr);
