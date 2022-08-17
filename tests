@@ -11,3 +11,11 @@ echo -n '=?utf-8?Q?=E5=BE=AE=E4=BF=A1?= \
 	 =?utf-8?Q?=E5=8F=8A=E7=A4=BE?= \
 	 =?utf-8?Q?=E7=BE=A4=E8=BF=90=E8=90=A5=E5=85=A8=E6=94=BB=E7=95=A5?=' | ./mimelang -vVua
 echo -n '=?utf-8?b?QkNEIFRyYXZlbCBHZXJtYW55IEdtYkg=?=' | ./mimelang -vVua
+echo -n '=?utf-8?Q?=E3=80=90=E6=96=B0=E7=89=88-PFME?=
+	=?utf-8?Q?A=E5=A4=B1=E6=95=88=E6=A8=A1?=
+	=?utf-8?Q?=E5=BC=8F=E5=88=86=E6=9E=90=E3=80=91=E3=80=90TWI?=
+	=?utf-8?Q?=E4=B8=80=E7=BA=BF=E4=B8=BB=E7=AE=A1?=
+	=?utf-8?Q?=E6=A0=B8=E5=BF=83=E7=AE=A1=E7=90=86?=
+	=?utf-8?Q?=E8=83=BD=E5=8A=9B=E6=8F=90=E5=8D=87?=
+	=?utf-8?Q?=E8=AE=AD=E7=BB=83=E3=80=91=EF=BC=88=E5=8F=AF_=E5=AE=9A_?=
+	=?utf-8?Q?=E5=88=B6_=E5=86=85_=E8=AE=AD=EF=BC=89?=' | ./mimelang -vVua

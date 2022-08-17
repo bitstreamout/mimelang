@@ -278,7 +278,8 @@ int main(int argc, char *argv[])
 				decode_quoted_printable(start+2);
 			if (*start == 'B' || *start == 'b')
 				decode_base64(start+2);
-			start = end+2;
+			if (end)
+				start = end+2;
 		}
 	}
 
